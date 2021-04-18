@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+   This file contains the main program to read data, run classifiers
+   and print results to stdout.
+
+   You do not need to change this file. You can add debugging code or code to
+   help produce your report, but this code should not be run by default in
+   your final submission.
+
+   Brown CS142, Spring 2020
+"""
+
+import numpy as np
+import random
+import gzip
+import os
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from linReg import LinearRegression
+
+DATA_FILE_PATH = 'NBADATA/nba17data.txt'
+
+def import_wine(filepath, test_size=0.2):
+    '''
+        Helper function to import the wine dataset
+
+        @param:
+            filepath: path to wine.txt
+            test_size: the fraction of the dataset set aside for testing
+        @return:
+            X_train: training data inputs
+            Y_train: training data values
+            X_test: testing data inputs
+            Y_test: testing data values
+    '''
+
+    # Check if the file exists
+    if not os.path.exists(filepath):
+        print('The file {} does not exist'.format(filepath))
+        exit()
+
+    # Load in the dataset
+    data = np.loadtxt(filepath, skiprows=1)
+    X, Y = data[:, 1:], data[:, 0]
+
+    # Normalize the inputs
+    # X = (X-np.mean(X, axis=0))/np.std(X, axis=0)
+
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size)
+    return X_train, X_test, Y_train, Y_test
+
+
+def kelly(predictions, inputs, finals):
+    total = 0
+    for i in range(len(predictions)):
+        #print(total)
+        our_diff = (predictions[i] - (-1 * inputs[i][2]))
+        final_diff = ((-1 * inputs[i][2]) - finals[i])
+        if (our_diff > 0):
+            if (final_diff < 0):
+                total = total + (our_diff * 10/11)
+            elif (final_diff > 0):
+                total = total - our_diff
+        if (our_diff < 0):
+            if (final_diff > 0):
+                total = total + (our_diff * 10/11)
+            elif (final_diff < 0):
+                total = total - our_diff
+    return total
+
+
+def test_linreg():
+    '''
+        Helper function that tests LinearRegression.
+
+        @param:
+            None
+        @return:
+            None
+    '''
+
+    X_train, X_test, Y_train, Y_test = import_wine(DATA_FILE_PATH)
+
+    num_features = X_train.shape[1]
+
+    # Padding the inputs with a bias
+    X_train_b = np.append(X_train, np.ones((len(X_train), 1)), axis=1)
+    X_test_b = np.append(X_test, np.ones((len(X_test), 1)), axis=1)
+
+    #### Matrix Inversion ######
+    print('---- LINEAR REGRESSION w/ Matrix Inversion ---')
+    solver_model = LinearRegression(num_features)
+    solver_model.train(X_train_b, Y_train)
+    print('Average Training Loss:', solver_model.average_loss(X_train_b, Y_train))
+    print('Average Testing Loss:', solver_model.average_loss(X_test_b, Y_test))
+
+    tt = kelly(solver_model.predict(X_test_b), X_test_b, Y_test)
+    print(tt)
+
+def main():
+
+    # Set random seeds. DO NOT CHANGE THIS IN YOUR FINAL SUBMISSION.
+    random.seed(0)
+    np.random.seed(0)
+    test_linreg()
+
+if __name__ == "__main__":
+    main()
